@@ -1,0 +1,27 @@
+{
+  "name": "sms-location-bot",
+  "version": "1.0.0",
+  "description": "Uses the Twilio API to accept requests to locate a resource, and send responses with nearest resource locations, over SMS.",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HackMichiana/sms-location-bot.git"
+  },
+  "keywords": [
+    "sms",
+    "geolocation",
+    "code-for-america",
+    "hack-michiana"
+  ],
+  "author": "Chris Johnson Bidler",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/HackMichiana/sms-location-bot/issues"
+  },
+  "homepage": "https://github.com/HackMichiana/sms-location-bot#readme"
+}
