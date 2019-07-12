@@ -3,10 +3,15 @@
   "version": "1.0.0",
   "description": "Uses the Twilio API to accept requests to locate a resource, and send responses with nearest resource locations, over SMS.",
   "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "twilio": "^3.33.1"
+  },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
