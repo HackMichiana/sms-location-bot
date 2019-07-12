@@ -7,7 +7,7 @@ const MessagingResponse = require('twilio').twiml.MessagingResponse;
 
 const app = express();
 
-let locationData = {}; // actually fetched at server startup
+let locationData = new Map(); // actually fetched at server startup
 
 const fetchLocationData = () => {
     https.get(process.env.DATA_URL, (res) => {
@@ -34,7 +34,8 @@ const fetchLocationData = () => {
         res.on('data', (chunk) => { rawData += chunk; });
         res.on('end', () => {
           try {
-            locationData = JSON.parse(rawData); // FIXME: probably should sanitize this with something smarter than JSON.parse
+            tmpData = JSON.parse(rawData); // FIXME: probably should sanitize this with something smarter than JSON.parse
+            locationData = extractGeoJsonData(tmpData);
           } catch (e) {
             console.error(e.message);
           }
@@ -44,20 +45,67 @@ const fetchLocationData = () => {
     });
 }
 
+const processMessage = (message) => {
+    const sentZipCodes = extractMessageZipCodes(message);
+    if(sentZipCodes.length == 0) {
+        return `Sorry, I couldn't find any ZIP codes in your text message. Please try again.`;
+    }
+    
+    const knownZipCodes = Array.from(locationData.keys());
+    let foundShelters = [];
+    knownZipCodes.map((known) => {
+        sentZipCodes.map((sent) => {
+            if(sent.startsWith(known.substring(0,2))) {
+                foundShelters.push(known);
+            }
+        });
+    });
+   
+    if (foundShelters.length == 0) {
+        return `Sorry, I don't know about any shelters near ${sentZipCodes[0]}. Please try again later!`;
+    }
+    var resultString = '';
+    foundShelters.map((val) => {
+        const shelters = Array.from(locationData.get(val));
+        shelters.map((sh) => {
+            const { shelter, address, phone } = sh;
+            resultString += String.raw`
+            Name: ${shelter}
+            Address: ${address}
+            Phone: ${phone || 'not known'}
+            `;
+        })       
+    });
+    return `Found the following shelters near you: ${resultString}`;      
+}
+
+const extractMessageZipCodes = (message) => {
+    const zipCodeRegex = RegExp('[0-9]{5}', 'g');
+    let matches = [];
+    while ((match = zipCodeRegex.exec(message)) != null) {
+        matches.push(match[0]);
+    }
+    return matches;
+}
+
+const extractGeoJsonData = (json) => {
+    let extractedData = new Map();
+    json.features.map((val, _idx, _ary) => {
+        const { zip } = val.properties;
+        if(!extractedData.has(zip)) {
+            extractedData.set(zip, new Array());           
+        }
+        extractedData.get(zip).push(val.properties);
+    });
+    return extractedData;
+}
+
 app.use(bodyParser.urlencoded({extended: false}));
 app.post('/sms', (req, res) => {
     const twiml = new MessagingResponse();
-    
-    console.log(`request Body: ${req.body.Body}`);
-    const zipCodeRegex = RegExp('\d{5}', 'g');
-    console.log(`test ${zipCodeRegex.test('12345')}`);
-    let matches = [];
-    while ((match = zipCodeRegex.exec(req.body.Body)) != null) {
-        matches.push(match);
-    }
-    console.log(`Matches: ${util.inspect(matches, false, null, true)}`);
+    const reply = processMessage(req.body.Body);
 
-    twiml.message(`Found ${util.inspect(matches, false, null, false)} in message`);
+    twiml.message(reply);
   
     res.writeHead(200, {'Content-Type': 'text/xml'});
     res.end(twiml.toString());
