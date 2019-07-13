@@ -113,5 +113,7 @@ app.post('/sms', (req, res) => {
   
 http.createServer(app).listen(process.env.PORT, () => {
     fetchLocationData();
+    const minutesInMS = 60000;
+    setInterval(fetchLocationData, 5 * minutesInMS);
     console.log(`Express server listening on: ${process.env.PORT}`);
   });
